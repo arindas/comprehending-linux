@@ -35,6 +35,7 @@ Now based on your distribution, install the required packages:
   > our working environment is not recommended.
 - An editor. Use whatever you prefer (try something terminal based: `nano`, `vi`, `vim`, `neovim` ...)
 - [`tmux`](https://github.com/tmux/tmux/wiki/Getting-Started) our terminal multiplexer. Here's a keybinds [cheatsheet](https://tmuxcheatsheet.com/)
+- [`bear`](https://github.com/rizsotto/Bear) a tool that generates a compilation database for clang tooling.
 
 ## Installing Dependencies
 
@@ -53,7 +54,8 @@ sudo apt install gcc gdb make flex bison \
     cpio \
     qemu-system-x86 \
     nano \
-    tmux
+    tmux \
+    bear
 ```
 
 For Arch Linux and derivatives (e.g. Endeavour OS, Manjaro):
@@ -71,7 +73,8 @@ sudo pacman -Sy gcc gdb make flex bison \
     cpio \
     qemu-system-x86 \
     nano \
-    tmux
+    tmux \
+    bear
 ```
 
 ## Grabbing our kernel sources
