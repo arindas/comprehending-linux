@@ -41,7 +41,7 @@ Now based on your distribution, install the required packages:
 
 For Debian/Ubuntu based distributions:
 
-```sh
+```bash
 sudo apt install gcc gdb make flex bison \
     libncurses-dev \
     curl wget \
@@ -60,7 +60,7 @@ sudo apt install gcc gdb make flex bison \
 
 For Arch Linux and derivatives (e.g. Endeavour OS, Manjaro):
 
-```sh
+```bash
 sudo pacman -Sy gcc gdb make flex bison \
     ncurses \
     curl wget \
@@ -80,7 +80,7 @@ sudo pacman -Sy gcc gdb make flex bison \
 ## Grabbing our kernel sources
 
 Next, let's grab our linux kernel. Goto <https://www.kernel.org> and right click and copy the link from the
-**big yellow button**. That's the stable release. At the time of writing (2025-02-02) it's `6.13.1`
+**big yellow button**. That's the stable release. At the time of writing (2025-11-21) it's `6.17.8`
 
 <p align="center">
 <img src="./img/kernel-org.png" alt="kernel-org" width="800"/>
@@ -88,15 +88,18 @@ Next, let's grab our linux kernel. Goto <https://www.kernel.org> and right click
 
 Download it to your workspace with `wget`. Then extract with `tar`
 
-```
-mkdir -p ~/source/workspace-000
-cd ~/source/workspace-000
+```bash
+#/bin/bash
 
-wget "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.13.1.tar.xz"
+VERSION="6.17.8"
+mkdir kernel-workspace
+pushd kernel-workspace
 
-tar xf linux-6.13.1.tar.xz
-rm linux-6.13.1.tar.xz
-cd linux-6.13.1
+wget "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${VERSION}.tar.xz"
+
+tar xf linux-${VERSION}.tar.xz
+rm linux-${VERSION}.tar.xz
+pushd linux-${VERSION}
 ```
 
 You may need to update the download link, archive name and folder name for the commands.
