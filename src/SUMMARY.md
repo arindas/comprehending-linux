@@ -8,9 +8,9 @@
 - [Getting Started](./ch01-00-getting-started.md)
 
   - [Environment Setup](./ch01-01-env-setup.md)
-  - [Building Linux kernel from source](./ch01-02-build-kernel.md)
-  - [Running our kernel build: QEMU](./ch01-03-linux-qemu.md)
-  - [Debugging: GDB + QEMU monitor](./ch01-04-gdb-qemu.md)
+  - [Build Kernel & Userspace image](./ch01-02-build-kernel.md)
+  - [Run kernel build with QEMU](./ch01-03-linux-qemu.md)
+  - [GDB + QEMU monitor](./ch01-04-gdb-qemu.md)
 
 - [Kernel interfaces](ch02-00-kernel-interfaces.md)
 
