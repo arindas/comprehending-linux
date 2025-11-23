@@ -50,7 +50,7 @@ qemu-system-x86_64 \
 
 ```
 
-This yields the following QEMU console output:
+This yields the following QEMU console output (feel free to skim through, we break it down in the following sections):
 
 ```
 SeaBIOS (version 1.15.0-1)
@@ -417,6 +417,58 @@ Booting from ROM..
 [    2.661869] ---[ end Kernel panic - not syncing: VFS: Unable to mount root fs on unknown-block(0,0) ]---
 
 ```
+
+Let's break down the boot logs by different subsystems so that we understand what's happening. We
+don't need to know everything right now, just enough to know where to look.
+
+## BIOS, Network boot
+
+TODO
+
+TODO log sections
+
+## Mount `rootfs`
+
+```
+[    2.642656] md: Waiting for all devices to be available before autodetect
+[    2.643010] md: If you don't use raid, use raid=noautodetect
+[    2.643373] md: Autodetecting RAID arrays.
+[    2.644038] md: autorun ...
+[    2.644397] md: ... autorun DONE.
+[    2.647746] /dev/root: Can't open blockdev
+[    2.648623] VFS: Cannot open root device "" or unknown-block(0,0): error -6
+[    2.649054] Please append a correct "root=" boot option; here are the available partitions:
+[    2.650159] 0b00         1048575 sr0
+[    2.650267]  driver: sr
+[    2.651023] List of all bdev filesystems:
+[    2.651537]  ext3
+[    2.651589]  ext2
+[    2.651707]  ext4
+[    2.651883]  vfat
+[    2.652072]  msdos
+[    2.652149]  iso9660
+[    2.652335]
+[    2.653343] Kernel panic - not syncing: VFS: Unable to mount root fs on unknown-block(0,0)
+[    2.654262] CPU: 0 UID: 0 PID: 1 Comm: swapper/0 Not tainted 6.17.8 #1 PREEMPT(voluntary)
+[    2.654790] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.15.0-1 04/01/2014
+[    2.655495] Call Trace:
+[    2.656237]  <TASK>
+[    2.656582]  vpanic+0x2fb/0x320
+[    2.657100]  panic+0x56/0x60
+[    2.657378]  mount_root_generic+0x1ff/0x320
+[    2.657665]  prepare_namespace+0x63/0x270
+[    2.657981]  kernel_init_freeable+0x297/0x2e0
+[    2.658324]  ? __pfx_kernel_init+0x10/0x10
+[    2.658516]  kernel_init+0x15/0x1c0
+[    2.658744]  ret_from_fork+0xc1/0x100
+[    2.658893]  ? __pfx_kernel_init+0x10/0x10
+[    2.659105]  ret_from_fork_asm+0x1a/0x30
+[    2.659437]  </TASK>
+[    2.661105] Kernel Offset: 0x1e00000 from 0xffffffff81000000 (relocation range: 0xffffffff80000000-0xffffffffbfffffff)
+[    2.661869] ---[ end Kernel panic - not syncing: VFS: Unable to mount root fs on unknown-block(0,0) ]---
+```
+
+### Kernel panic when mounting `rootfs`
 
 Now notice the last line:
 
