@@ -688,29 +688,37 @@ You should now be in the parent `kernel-workspace` directory.
 Now with our initramfs and kernel image ready, let's boot our kernel:
 
 ```bash
-qemu-system-x86_64 \
+sudo qemu-system-x86_64 \
     -kernel linux-6.17.8/arch/x86/boot/bzImage \
     -initrd initramfs.cpio.gz \
     -append "console=ttyS0 rdinit=/sbin/init" \
     -device virtio-net,netdev=n0 \
     -netdev user,id=n0 \
-    -nographic
+    -nographic \
+    -enable-kvm \
+    -cpu host
 ```
 
 This launches us into a `/bin/sh` shell:
 
 ```
-[    2.245616] Freeing unused kernel image (text/rodata gap) memory: 72K
-[    2.246781] Freeing unused kernel image (rodata/data gap) memory: 872K
-[    2.478675] x86/mm: Checked W+X mappings: passed, no W+X pages found.
-[    2.479438] tsc: Refined TSC clocksource calibration: 2944.600 MHz
-[    2.480019] clocksource: tsc: mask: 0xffffffffffffffff max_cycles: 0x2a71d730fd6, max_idle_ns: 440795250680 ns
-[    2.481211] clocksource: Switched to clocksource tsc
-[    2.483386] input: ImExPS/2 Generic Explorer Mouse as /devices/platform/i8042/serio1/input/input3
-[    2.484820] Run /sbin/init as init process
+[    0.802828] cfg80211: failed to load regulatory.db
+[    0.856293] ata2: found unknown device (class 0)
+[    0.858599] ata2.00: ATAPI: QEMU DVD-ROM, 2.5+, max UDMA/100
+[    0.862059] scsi 1:0:0:0: CD-ROM            QEMU     QEMU DVD-ROM     2.5+ PQ: 0 ANSI: 5
+[    0.874383] sr 1:0:0:0: [sr0] scsi3-mmc drive: 4x/4x cd/rw xa/form2 tray
+[    0.876480] cdrom: Uniform CD-ROM driver Revision: 3.20
+[    0.882498] sr 1:0:0:0: Attached scsi generic sg0 type 5
+[    0.884890] Freeing unused kernel image (initmem) memory: 2868K
+[    0.886516] Write protecting the kernel read-only data: 26624k
+[    0.889554] Freeing unused kernel image (text/rodata gap) memory: 72K
+[    0.892213] Freeing unused kernel image (rodata/data gap) memory: 872K
+[    0.924143] x86/mm: Checked W+X mappings: passed, no W+X pages found.
+[    0.925750] Run /sbin/init as init process
+[    0.930418] ip (58) used greatest stack depth: 13536 bytes left
 udhcpc: started, v1.36.1
 Clearing IP addresses on eth0, upping it
-[    2.591403] ip (61) used greatest stack depth: 13520 bytes left
+[    0.935532] ip (61) used greatest stack depth: 13520 bytes left
 udhcpc: broadcasting discover
 udhcpc: broadcasting select for 10.0.2.15, server 10.0.2.2
 udhcpc: lease of 10.0.2.15 obtained from 10.0.2.2, lease time 86400
@@ -721,35 +729,25 @@ Adding router 10.0.2.2
 Recreating /etc/resolv.conf
  Adding DNS server 10.0.2.3
 
-~ # [    3.170447] clocksource: timekeeping watchdog on CPU0: Marking clocksource 'tsc' as unstable because the skew is too large:
-[    3.171466] clocksource:                       'hpet' wd_nsec: 495327040 wd_now: 1212d50e wd_last: f1f05ee mask: ffffffff
-[    3.171944] clocksource:                       'tsc' cs_nsec: 492961151 cs_now: 2a5e6e8a8 cs_last: 24f61a7a1 mask: ffffffffffffffff
-[    3.172477] clocksource:                       Clocksource 'tsc' skewed -2365889 ns (-2 ms) over watchdog 'hpet' interval of 495327040 ns (495 ms)
-[    3.173264] clocksource:                       'tsc' is current clocksource.
-[    3.174075] tsc: Marking TSC unstable due to clocksource watchdog
-[    3.174787] TSC found unstable after boot, most likely due to broken BIOS. Use 'tsc=unstable'.
-[    3.175281] sched_clock: Marking unstable (3128652121, 45998290)<-(3179796517, -5073599)
-[    3.177610] clocksource: Not enough CPUs to check clocksource 'tsc'.
-[    3.178361] clocksource: Switched to clocksource hpet
+~ # [    1.156665] input: ImExPS/2 Generic Explorer Mouse as /devices/platform/i8042/serio1/input/input3
 
-~ #
-~ #
 ~ # ping 8.8.8.8
 PING 8.8.8.8 (8.8.8.8): 56 data bytes
-64 bytes from 8.8.8.8: seq=0 ttl=255 time=40.024 ms
-64 bytes from 8.8.8.8: seq=1 ttl=255 time=33.111 ms
-64 bytes from 8.8.8.8: seq=2 ttl=255 time=33.476 ms
-64 bytes from 8.8.8.8: seq=3 ttl=255 time=33.058 ms
-64 bytes from 8.8.8.8: seq=4 ttl=255 time=53.011 ms
+64 bytes from 8.8.8.8: seq=0 ttl=255 time=33.543 ms
+64 bytes from 8.8.8.8: seq=1 ttl=255 time=35.879 ms
+64 bytes from 8.8.8.8: seq=2 ttl=255 time=32.863 ms
+64 bytes from 8.8.8.8: seq=3 ttl=255 time=33.360 ms
+64 bytes from 8.8.8.8: seq=4 ttl=255 time=32.872 ms
+64 bytes from 8.8.8.8: seq=5 ttl=255 time=92.780 ms
 ^C
 --- 8.8.8.8 ping statistics ---
-5 packets transmitted, 5 packets received, 0% packet loss
-round-trip min/avg/max = 33.058/38.536/53.011 ms
+6 packets transmitted, 6 packets received, 0% packet loss
+round-trip min/avg/max = 32.863/43.549/92.780 ms
 ~ # wget -qO- http://ifconfig.me/all
 ip_addr: xxx.xxx.xxx.xxx
 remote_host: unavailable
 user_agent: Wget
-port: 45460
+port: 50858
 language:
 referer:
 connection:
