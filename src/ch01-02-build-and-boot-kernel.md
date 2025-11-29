@@ -519,7 +519,7 @@ it used `argv[0]` i.e the first command line parameter to decide which functiona
 symlinks named `mv`, `cp` etc. to the same `busybox` binary path; yet when you invoke these symlinks, they will provide their
 intended unique functionality.
 
-### Build `busybox` from source
+### Build BusyBox from source
 
 Similar workflow to our kernel: fetch sources, extract, configure, build.
 
@@ -527,6 +527,20 @@ Similar workflow to our kernel: fetch sources, extract, configure, build.
 popd
 wget https://busybox.net/downloads/busybox-1.36.1.tar.bz2
 tar xf busybox-1.36.1.tar.bz2
-cd busybox-1.36.1
+pushd busybox-1.36.1
 make menuconfig
 ```
+
+Now select:
+
+1. Settings
+2. Enable "Build static binary (no shapred libs)" (press space)
+3. Select and specify "Destination path for 'make install'" as "./../rootfs"
+
+```bash
+make -j12  # use number of jobs as supported by your machine
+sudo make install
+popd
+```
+
+This should result in a `rootfs` directory in our `kernel-workspace` directory.
