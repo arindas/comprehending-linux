@@ -2,7 +2,7 @@
 
 ## Build kernel from source
 
-From the kernel source directory:
+From inside the kernel source directory:
 
 ```bash
 make menuconfig
@@ -21,26 +21,34 @@ Next, we will use the default `x86_64` config:
 
 ```bash
 make x86_64_defconfig
-make kvm_guest.config
 ```
 
 > For other architectures, look for `${arch}_defconfig`
 
+We will also enable kvm_guest.config since we intend to run it inside QEMU with KVM acceleration.
+
+```bash
+make kvm_guest.config
+```
+
 Now build the kernel:
 
 ```bash
-export NJ=$(nproc)  # number of make jobs, use nproc or specify a value mnaually
-make -j${NJ}
+make -j$(nproc)
 ```
+
+> The `-j` flag specifies the number of parallel jobs to use for running make tasks.
+> `nproc` outputs the number of processors on a system. So `-j$(nproc)` means use as
+> many parallel jobs as the number of processors.
+>
+> In practice, if you are on a desktop, you probably don't want to go upto 100% CPU
+> <usage on all cores. You can manually specify a lower number. For instance on a
+> 16 core system I use -j12 to keep 4 cores free.
 
 This should produce a kernel image:
 
 ```
 Kernel: arch/x86/boot/bzImage is ready  (#1)
-❯ file arch/x86_64/boot/bzImage
-arch/x86_64/boot/bzImage: symbolic link to ../../x86/boot/bzImage
-❯ file arch/x86/boot/bzImage
-arch/x86/boot/bzImage: Linux kernel x86 boot executable bzImage, version 6.17.8 (arindas@arubox) #1 SMP PREEMPT_DYNAMIC Sat Nov 22 22:26:42 IST 2025, RO-rootFS, swap_dev 0XD, Normal VGA
 ```
 
 ## Kernel boot attempt `#0`
@@ -48,11 +56,12 @@ arch/x86/boot/bzImage: Linux kernel x86 boot executable bzImage, version 6.17.8 
 Let's run this kernel image with QEMU:
 
 ```bash
+popd
+
 qemu-system-x86_64 \
-  -kernel arch/x86/boot/bzImage \
+  -kernel linux-6.17.8/arch/x86/boot/bzImage \
   -append "console=ttyS0" \
   -nographic
-
 ```
 
 <details>
@@ -538,6 +547,10 @@ Now select:
 2. Enable "Build static binary (no shapred libs)" (press space)
 3. Select and specify "Destination path for 'make install'" as "./../rootfs"
 
+<p align="center">
+<img src="./img/busybox-config.png" alt="busybox-config" width="800"/>
+</p>
+
 ```bash
 make -j12  # use number of jobs as supported by your machine
 sudo make install
@@ -545,3 +558,209 @@ popd
 ```
 
 This should result in a `rootfs` directory in our `kernel-workspace` directory.
+
+Next, let's add the missing directories and configuration for our rootfs:
+
+```bash
+pushd rootfs
+sudo mkdir -p proc sys dev tmp etc
+```
+
+Next, inside the `rootfs` directory, create a new file `etc/inittab` with the following contents:
+
+```
+::sysinit:/bin/mount -t proc proc /proc
+::sysinit:/bin/mount -t sysfs sysfs /sys
+::sysinit:/bin/mount -t devtmpfs dev /dev
+
+::sysinit:/sbin/ip link set eth0 up
+::sysinit:/sbin/udhcpc -i eth0 -s /usr/share/udhcpc/default.script
+
+ttyS0::respawn:/sbin/getty -n -l /bin/sh -L ttyS0 115200 vt100
+```
+
+> `/etc/inittab` is the configuration file to the `/sbin/init` init process for our `busybox` system.
+>
+> The init process is the first process to run on a Linux system. It has `PID = 0` (PID: process id).
+>
+> It is responsible for mounting file systems, setting up devices and starting system services.
+>
+> Let's analyse our `/etc/inittab` configuration:
+>
+> ```
+> ::sysinit:/bin/mount -t proc proc /proc
+> ::sysinit:/bin/mount -t sysfs sysfs /sys
+> ::sysinit:/bin/mount -t devtmpfs dev /dev
+> ```
+>
+> Mount `procfs`, `sysfs`, `devtmpfs`. These are psuedo filesystems that allow interacting with
+> processes, system configuration and devices, respectively, via file-like interfaces.
+>
+> ```
+> ::sysinit:/sbin/ip link set eth0 up
+> ::sysinit:/sbin/udhcpc -i eth0 -s /usr/share/udhcpc/default.script
+> ```
+>
+> Setup eth0 network interface.
+>
+> ```
+> ttyS0::respawn:/sbin/getty -n -l /bin/sh -L ttyS0 115200 vt100
+> ```
+>
+> Spawn a shell terminal.
+
+Also copy the udhcpc script:
+
+```
+sudo mkdir -p usr/share/udhcpc
+sudo cp ../busybox-1.36.1/examples/udhcp/simple.script usr/share/udhcpc/default.script
+sudo chmod +x usr/share/udhcpc/default.script
+```
+
+With this, our `rootfs` is ready.
+
+Now how do we mount this rootfs? We have the following options:
+
+- Use a virtual hard disk
+
+  - Create a virtual hard disk file.
+  - Create partitions on this virtual hardisk
+  - Mount it to the host machine
+  - Install the bootloader (GRUB) into it
+  - Copy the kernel image and rootfs into it
+  - Pass it to QEMU as the only block storage device
+
+- Use QEMU SeaBIOS bootloader + `initramfs`
+  - Create an initramfs CPIO archive from out rootfs
+  - Pass the kernel and the initramfs to QEMU to boot with SeaBIOS
+
+Using an `initramfs` is significantly simpler, that is the approach we will be taking for now.
+
+> From <b>The Linux Kernel Documentation<n> - <i>["Ramfs, rootfs and initramfs"](https://docs.kernel.org/filesystems/ramfs-rootfs-initramfs.html)</i>
+>
+> ### What is ramfs?
+>
+> Ramfs is a very simple filesystem that exports Linux’s disk caching mechanisms (the page
+> cache and dentry cache) as a dynamically resizable RAM-based filesystem.
+>
+> Normally all files are cached in memory by Linux. Pages of data read from backing store
+> (usually the block device the filesystem is mounted on) are kept around in case it’s
+> needed again, but marked as clean (freeable) in case the Virtual Memory system needs the
+> memory for something else. Similarly, data written to files is marked clean as soon as it
+> has been written to backing store, but kept around for caching purposes until the VM
+> reallocates the memory. A similar mechanism (the dentry cache) greatly speeds up access
+> to directories.
+>
+> With ramfs, there is no backing store. Files written into ramfs allocate dentries and page
+> cache as usual, but there’s nowhere to write them to. This means the pages are never marked
+> clean, so they can’t be freed by the VM when it’s looking to recycle memory.
+>
+> The amount of code required to implement ramfs is tiny, because all the work is done by
+> the existing Linux caching infrastructure. Basically, you’re mounting the disk cache as a
+> filesystem. Because of this, ramfs is not an optional component removable via menuconfig,
+> since there would be negligible space savings.
+>
+> _[ ... ]_
+>
+> ### What is initramfs?
+>
+> Linux kernels contain a gzipped “cpio” format archive, which is extracted into rootfs
+> when the kernel boots up. After extracting, the kernel checks to see if rootfs contains
+> a file “init”, and if so it executes it as PID 1. If found, this init process is responsible
+> for bringing the system the rest of the way up, including locating and mounting the real
+> root device (if any). If rootfs does not contain an init program after the embedded cpio
+> archive is extracted into it, the kernel will fall through to the older code to locate
+> and mount a root partition, then exec some variant of /sbin/init out of that.
+
+### Build initramfs
+
+In the `rootfs` directory:
+
+```bash
+find . -print0 | cpio --null -ov --format=newc | gzip -9 > ../initramfs.cpio.gz
+popd
+```
+
+You should now be in the parent `kernel-workspace` directory.
+
+## Kernel boot attempt #1
+
+Now with our initramfs and kernel image ready, let's boot our kernel:
+
+```bash
+qemu-system-x86_64 \
+    -kernel linux-6.17.8/arch/x86/boot/bzImage \
+    -initrd initramfs.cpio.gz \
+    -append "console=ttyS0 rdinit=/sbin/init" \
+    -device virtio-net,netdev=n0 \
+    -netdev user,id=n0 \
+    -nographic
+```
+
+This launches us into a `/bin/sh` shell:
+
+```
+[    2.245616] Freeing unused kernel image (text/rodata gap) memory: 72K
+[    2.246781] Freeing unused kernel image (rodata/data gap) memory: 872K
+[    2.478675] x86/mm: Checked W+X mappings: passed, no W+X pages found.
+[    2.479438] tsc: Refined TSC clocksource calibration: 2944.600 MHz
+[    2.480019] clocksource: tsc: mask: 0xffffffffffffffff max_cycles: 0x2a71d730fd6, max_idle_ns: 440795250680 ns
+[    2.481211] clocksource: Switched to clocksource tsc
+[    2.483386] input: ImExPS/2 Generic Explorer Mouse as /devices/platform/i8042/serio1/input/input3
+[    2.484820] Run /sbin/init as init process
+udhcpc: started, v1.36.1
+Clearing IP addresses on eth0, upping it
+[    2.591403] ip (61) used greatest stack depth: 13520 bytes left
+udhcpc: broadcasting discover
+udhcpc: broadcasting select for 10.0.2.15, server 10.0.2.2
+udhcpc: lease of 10.0.2.15 obtained from 10.0.2.2, lease time 86400
+Setting IP address 10.0.2.15 on eth0
+Deleting routers
+route: SIOCDELRT: No such process
+Adding router 10.0.2.2
+Recreating /etc/resolv.conf
+ Adding DNS server 10.0.2.3
+
+~ # [    3.170447] clocksource: timekeeping watchdog on CPU0: Marking clocksource 'tsc' as unstable because the skew is too large:
+[    3.171466] clocksource:                       'hpet' wd_nsec: 495327040 wd_now: 1212d50e wd_last: f1f05ee mask: ffffffff
+[    3.171944] clocksource:                       'tsc' cs_nsec: 492961151 cs_now: 2a5e6e8a8 cs_last: 24f61a7a1 mask: ffffffffffffffff
+[    3.172477] clocksource:                       Clocksource 'tsc' skewed -2365889 ns (-2 ms) over watchdog 'hpet' interval of 495327040 ns (495 ms)
+[    3.173264] clocksource:                       'tsc' is current clocksource.
+[    3.174075] tsc: Marking TSC unstable due to clocksource watchdog
+[    3.174787] TSC found unstable after boot, most likely due to broken BIOS. Use 'tsc=unstable'.
+[    3.175281] sched_clock: Marking unstable (3128652121, 45998290)<-(3179796517, -5073599)
+[    3.177610] clocksource: Not enough CPUs to check clocksource 'tsc'.
+[    3.178361] clocksource: Switched to clocksource hpet
+
+~ #
+~ #
+~ # ping 8.8.8.8
+PING 8.8.8.8 (8.8.8.8): 56 data bytes
+64 bytes from 8.8.8.8: seq=0 ttl=255 time=40.024 ms
+64 bytes from 8.8.8.8: seq=1 ttl=255 time=33.111 ms
+64 bytes from 8.8.8.8: seq=2 ttl=255 time=33.476 ms
+64 bytes from 8.8.8.8: seq=3 ttl=255 time=33.058 ms
+64 bytes from 8.8.8.8: seq=4 ttl=255 time=53.011 ms
+^C
+--- 8.8.8.8 ping statistics ---
+5 packets transmitted, 5 packets received, 0% packet loss
+round-trip min/avg/max = 33.058/38.536/53.011 ms
+~ # wget -qO- http://ifconfig.me/all
+ip_addr: xxx.xxx.xxx.xxx
+remote_host: unavailable
+user_agent: Wget
+port: 45460
+language:
+referer:
+connection:
+keep_alive:
+method: GET
+encoding:
+mime:
+charset:
+via: 1.1 google
+forwarded: xxx.xxx.xxx.xxx,xxx.xxx.xxx.xxx
+~ #
+```
+
+We have internet access in our VM!
