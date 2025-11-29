@@ -497,8 +497,35 @@ Fig: The Linux Filesystem Hierarchy (https://www.linuxfoundation.org)
 
 > For more information, see [`file-hierarchy(7)`](https://man7.org/linux/man-pages/man7/file-hierarchy.7.html) on the Linux man pages.
 
-Next, we need to create a block storage device to mount the `rootfs`. However, what if we could pass a single
-file to QEMU that could contain our rootfs as well act as storage device? This would significantly simplify
-our QEMU workflow for the time being.
+We will create our `rootfs` with [`busybox`](https://busybox.net).
 
-This is precisely where an `initramfs` is useful.
+From `busybox` ["About Busybox"](https://busybox.net/about.html):
+
+> ### BusyBox: The Swiss Army Knife of Embedded Linux
+>
+> BusyBox combines tiny versions of many common UNIX utilities into a single small executable. It provides replacements for most of
+> the utilities you usually find in GNU fileutils, shellutils, etc. The utilities in BusyBox generally have fewer options than their
+> full-featured GNU cousins; however, the options that are included provide the expected functionality and behave very much like their
+> GNU counterparts. BusyBox provides a fairly complete environment for any small or embedded system.
+>
+> BusyBox has been written with size-optimization and limited resources in mind. It is also extremely modular so you can easily
+> include or exclude commands (or features) at compile time. This makes it easy to customize your embedded systems. To create a
+> working system, just add some device nodes in /dev, a few configuration files in /etc, and a Linux kernel.
+>
+> BusyBox is maintained by Denys Vlasenko, and licensed under the GNU GENERAL PUBLIC LICENSE version 2.
+
+`busybox` provides a single static binary with the same name, which acts as something called a "multicall" binary. Essentialy,
+it used `argv[0]` i.e the first command line parameter to decide which functionality to provide. This way you can create multiple
+symlinks named `mv`, `cp` etc. to the same `busybox` binary path; yet when you invoke these symlinks, they will provide their
+intended unique functionality.
+
+### Build `busybox` from source
+
+Similar workflow to our kernel: fetch sources, extract, configure, build.
+
+```bash
+wget https://busybox.net/downloads/busybox-1.36.1.tar.bz2
+tar xf busybox-1.36.1.tar.bz2
+cd busybox-1.36.1
+make menuconfig
+```
