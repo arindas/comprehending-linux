@@ -21,6 +21,7 @@ Next, we will use the default `x86_64` config:
 
 ```bash
 make x86_64_defconfig
+make kvm_guest.config
 ```
 
 > For other architectures, look for `${arch}_defconfig`
