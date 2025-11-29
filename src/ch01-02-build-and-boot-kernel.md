@@ -499,8 +499,8 @@ Fig: The Linux Filesystem Hierarchy (https://www.linuxfoundation.org)
 
 We will create our `rootfs` with [`busybox`](https://busybox.net).
 
-From `busybox` ["About Busybox"](https://busybox.net/about.html):
-
+> From **`busybox`** - <i>["About Busybox"](https://busybox.net/about.html)</i>
+>
 > ### BusyBox: The Swiss Army Knife of Embedded Linux
 >
 > BusyBox combines tiny versions of many common UNIX utilities into a single small executable. It provides replacements for most of
@@ -524,6 +524,7 @@ intended unique functionality.
 Similar workflow to our kernel: fetch sources, extract, configure, build.
 
 ```bash
+popd
 wget https://busybox.net/downloads/busybox-1.36.1.tar.bz2
 tar xf busybox-1.36.1.tar.bz2
 cd busybox-1.36.1
