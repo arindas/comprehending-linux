@@ -1,14 +1,11 @@
 [book]
 authors = ["Arindam Das"]
 language = "en"
-multilingual = false
 src = "src"
 title = "Comprehending Linux"
 
 [output.html]
 git-repository-url = "https://github.com/arindas/comprehending-linux/"
-preferred-dark-theme = "ayu"
-preferred-light-theme = "rust"
 default-theme = "light"
 mathjax-support = true
 

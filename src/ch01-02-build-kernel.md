@@ -1,4 +1,6 @@
-# Build kernel and rootfs
+# Build and boot kernel
+
+## Build kernel from source
 
 From the kernel source directory:
 
@@ -40,6 +42,8 @@ arch/x86_64/boot/bzImage: symbolic link to ../../x86/boot/bzImage
 arch/x86/boot/bzImage: Linux kernel x86 boot executable bzImage, version 6.17.8 (arindas@arubox) #1 SMP PREEMPT_DYNAMIC Sat Nov 22 22:26:42 IST 2025, RO-rootFS, swap_dev 0XD, Normal VGA
 ```
 
+## Kernel boot attempt `#0`
+
 Let's run this kernel image with QEMU:
 
 ```bash
@@ -50,7 +54,10 @@ qemu-system-x86_64 \
 
 ```
 
-This yields the following QEMU console output (feel free to skim through, we break it down in the following sections):
+<details>
+<summary>
+Kernel Log on boot in QEMU (expand to see full)
+</summary>
 
 ```
 SeaBIOS (version 1.15.0-1)
@@ -418,16 +425,9 @@ Booting from ROM..
 
 ```
 
-Let's break down the boot logs by different subsystems so that we understand what's happening. We
-don't need to know everything right now, just enough to know where to look.
+</details>
 
-## BIOS, Network boot
-
-TODO
-
-TODO log sections
-
-## Mount `rootfs`
+For the time being, let's focus on the tail section of the emitted kernel log:
 
 ```
 [    2.642656] md: Waiting for all devices to be available before autodetect
@@ -468,13 +468,37 @@ TODO log sections
 [    2.661869] ---[ end Kernel panic - not syncing: VFS: Unable to mount root fs on unknown-block(0,0) ]---
 ```
 
-### Kernel panic when mounting `rootfs`
+We observe the following:
 
-Now notice the last line:
+- The kernel tries to detect block devices
+- `VFS` (virtual file system) cannot find a block storage device to mount the root filesystem to
+- `VFS` is unable to mount `rootfs`
+- This leads to a kernel panic
 
-```
-[    2.661869] ---[ end Kernel panic - not syncing: VFS: Unable to mount root fs on unknown-block(0,0) ]---
-```
+## Build rootfs
 
-This indicates that the kernel was unable to mount a rootfs leading to
-kernel panic. This is natural since we haven't provided a rootfs yet.
+So we need something called a root filesystem and some block storage device. But what does this mean?
+
+> From <b>The Linux BootDisk HOWTO</b> - <i>["Building a root filesystem"](https://tldp.org/HOWTO/Bootdisk-HOWTO/buildroot.html)</i>
+>
+> A root filesystem must contain everything needed to support a full Linux system. To be able to do this, the disk must include the minimum requirements for a Linux system:
+>
+> - The basic file system structure,
+> - Minimum set of directories: /dev, /proc, /bin, /etc, /lib, /usr, /tmp,
+> - Basic set of utilities: sh, ls, cp, mv, etc.,
+> - Minimum set of config files: rc, inittab, fstab, etc.,
+> - Devices: /dev/hd*, /dev/tty*, /dev/fd0, etc.,
+> - Runtime library to provide basic functions used by utilities.
+
+<p align="center">
+<img src="./img/standard-unix-filesystem-hierarchy-1.png" alt="linux-source-tree"/>
+Fig: The Linux Filesystem Hierarchy (https://www.linuxfoundation.org)
+</p>
+
+> For more information, see [`file-hierarchy(7)`](https://man7.org/linux/man-pages/man7/file-hierarchy.7.html) on the Linux man pages.
+
+Next, we need to create a block storage device to mount the `rootfs`. However, what if we could pass a single
+file to QEMU that could contain our rootfs as well act as storage device? This would significantly simplify
+our QEMU workflow for the time being.
+
+This is precisely where an `initramfs` is useful.
