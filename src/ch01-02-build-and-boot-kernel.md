@@ -525,9 +525,9 @@ We will create our `rootfs` with [`busybox`](https://busybox.net).
 > BusyBox is maintained by Denys Vlasenko, and licensed under the GNU GENERAL PUBLIC LICENSE version 2.
 
 `busybox` provides a single static binary with the same name, which acts as something called a "multicall" binary. Essentialy,
-it used `argv[0]` i.e the first command line parameter to decide which functionality to provide. This way you can create multiple
-symlinks named `mv`, `cp` etc. to the same `busybox` binary path; yet when you invoke these symlinks, they will provide their
-intended unique functionality.
+it uses `argv[0]` i.e the first command line parameter (which is the invoking binaries file name) to decide which functionality
+to provide. This way you can create multiple symlinks named `mv`, `cp` etc. to the same `busybox` binary path; yet when you
+invoke these symlinks, they will provide their intended unique functionality.
 
 ### Build BusyBox from source
 
@@ -556,6 +556,8 @@ make -j12  # use number of jobs as supported by your machine
 sudo make install
 popd
 ```
+
+> Why `sudo`? The `rootfs` directory and it's contents must belong to `root`.
 
 This should result in a `rootfs` directory in our `kernel-workspace` directory.
 
@@ -631,12 +633,12 @@ Now how do we mount this rootfs? We have the following options:
   - Pass it to QEMU as the only block storage device
 
 - Use QEMU SeaBIOS bootloader + `initramfs`
-  - Create an initramfs CPIO archive from out rootfs
+  - Create an `initramfs` `CPIO` archive from out `rootfs`
   - Pass the kernel and the initramfs to QEMU to boot with SeaBIOS
 
 Using an `initramfs` is significantly simpler, that is the approach we will be taking for now.
 
-> From <b>The Linux Kernel Documentation<n> - <i>["Ramfs, rootfs and initramfs"](https://docs.kernel.org/filesystems/ramfs-rootfs-initramfs.html)</i>
+> From <b>The Linux Kernel Documentation</b> - <i>["Ramfs, rootfs and initramfs"](https://docs.kernel.org/filesystems/ramfs-rootfs-initramfs.html)</i>
 >
 > ### What is ramfs?
 >
@@ -698,6 +700,14 @@ sudo qemu-system-x86_64 \
     -enable-kvm \
     -cpu host
 ```
+
+> Why `sudo`? In order to use `KVM` acceleration QEMU needs to access `/dev/kvm`. You either need to be
+> part of the `kvm` user group or run this as `root`.
+>
+> ```bash
+> $ ls -l /dev/kvm
+> crw-rw---- 1 root kvm 10, 232 Nov 30 10:00 /dev/kvm
+> ```
 
 This launches us into a `/bin/sh` shell:
 
@@ -762,3 +772,5 @@ forwarded: xxx.xxx.xxx.xxx,xxx.xxx.xxx.xxx
 ```
 
 We have internet access in our VM!
+
+We now have a workflow to run and test custom kernels, kernel modules, drivers and different userspace utilities.
