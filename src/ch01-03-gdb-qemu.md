@@ -89,6 +89,8 @@ To make our life easier, it's best to add our user to the kvm group.
 sudo usermod -aG kvm ${USER}
 ```
 
+## Attach GDB to QEMU session
+
 Now boot the kernel with the CPU waiting for GDB and allow remote GDB debugging:
 
 ```bash
@@ -105,8 +107,9 @@ qemu-system-x86_64 \
 ```
 
 Extra flags:
-`-s` - Do not start CPU, wait for GDB
-`-S` - shorthand for `-gdb tcp::1234`
+
+- `-s` - Do not start CPU, wait for GDB
+- `-S` - shorthand for `-gdb tcp::1234`
 
 Also note the `nokaslr` parameter to `-append`. This disables KASLR (kernel address space layout randomization)
 so that our debug information can line up with the loaded kernel.
