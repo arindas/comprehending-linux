@@ -74,6 +74,23 @@ Also enable `CONFIG_GDB_SCRIPTS`:
         -> Provide GDB scripts for kernel debugging (GDB_SCRIPTS [=y])
 ```
 
+Optionally, use FRAME_POINTER unwinding by enabling `UNWINDER_FRAME_POINTER`:
+
+```
+-> Kernel Hacking
+    -> x86 Debugging
+        -> Choose kernel unwinder (<choice>)
+            -> Frame pointer unwinder (UNWINDER_FRAME_POINTER)
+```
+
+And finally enable `READABLE_ASM`
+
+```
+-> Kernel Hacking
+    -> Compile-time checks and compiler options
+        -> Generate readable assembler code (READABLE_ASM = [y])
+```
+
 Rebuild the kernel:
 
 ```bash
@@ -89,7 +106,7 @@ To make our life easier, it's best to add our user to the kvm group.
 sudo usermod -aG kvm ${USER}
 ```
 
-## Attach GDB to QEMU session
+## Attach GDB to QEMU monitor
 
 Now boot the kernel with the CPU waiting for GDB and allow remote GDB debugging:
 
@@ -109,12 +126,12 @@ qemu-system-x86_64 \
 Extra flags:
 
 - `-s` - Do not start CPU, wait for GDB
-- `-S` - shorthand for `-gdb tcp::1234`
+- `-S` - shorthand for `-gdb tcp::1234` expose a remote GDB session on TCP port `1234`
 
 Also note the `nokaslr` parameter to `-append`. This disables KASLR (kernel address space layout randomization)
 so that our debug information can line up with the loaded kernel.
 
-Now start the gdb session. In a separate terminal:
+Now start gdb. In a separate terminal:
 
 ```
 cd kernel-workspace/linux-6.17.8
@@ -122,7 +139,7 @@ cd kernel-workspace/linux-6.17.8
 gdb vmlinux
 ```
 
-Now in the gdb shell, connect to our QEMU session:
+Now in the gdb shell, connect to our QEMU monitor:
 
 ```
 target remote :1234
@@ -146,7 +163,16 @@ This should trap execution at the next invocation of the `read` system call.
 From there you can run `bt` to see the backtrace.
 
 <p align="center">
-<img src="./img/qemu-gdb.png" alt="linux-source-tree"/>
+<img src="./img/qemu-gdb.png" alt="qemu-gdb"/>
+</p>
+
+View the disassembly and source code side by side with `disassemble` and then `layout split`:
+
+<p align="center">
+<img src="./img/qemu-gdb-split-layout.png" alt="qemu-gdb-split-layout"/>
 </p>
 
 Press CTRL+D in GDB to exit.
+
+> Note that the FRAME_POINTER unwinder is slower than the ORC unwinder selected by default. When\
+> we use tracing tools native to the kernel later on, we will use the ORC unwinder.
