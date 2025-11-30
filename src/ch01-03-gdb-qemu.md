@@ -174,5 +174,5 @@ View the disassembly and source code side by side with `disassemble` and then `l
 
 Press CTRL+D in GDB to exit.
 
-> Note that the FRAME_POINTER unwinder is slower than the ORC unwinder selected by default. When\
+> Note that the FRAME_POINTER unwinder is slower than the ORC unwinder selected by default. When
 > we use tracing tools native to the kernel later on, we will use the ORC unwinder.
