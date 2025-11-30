@@ -17,5 +17,6 @@ It's completely fine to have a lot unanswered questions right now, like "What ar
 
 > There are a lot of operating systems texts that cover the latter topics in great detail, but it's hard to come
 > across any resource which contains the latest workflow for building and debugging the kernel.
+>
 > This is why I chose to start with these workflows instead. In a way it also makes introducing
-> several topics easier since we come across in some form or shape in this section.
+> several topics easier since we come across them in some form or shape in this section.
