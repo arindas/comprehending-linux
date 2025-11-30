@@ -9,7 +9,7 @@
 
   - [Environment Setup](./ch01-01-env-setup.md)
   - [Build and boot kernel](./ch01-02-build-and-boot-kernel.md)
-  - [GDB + QEMU monitor](./ch01-03-gdb-qemu.md)
+  - [Debug kernel: GDB + QEMU monitor](./ch01-03-gdb-qemu.md)
 
 - [Kernel interfaces](ch02-00-kernel-interfaces.md)
 

@@ -51,7 +51,7 @@ This should produce a kernel image:
 Kernel: arch/x86/boot/bzImage is ready  (#1)
 ```
 
-## Kernel boot attempt `#0`
+## Kernel boot attempt #0
 
 Let's run this kernel image with QEMU:
 
@@ -603,7 +603,7 @@ ttyS0::respawn:/sbin/getty -n -l /bin/sh -L ttyS0 115200 vt100
 > ::sysinit:/sbin/udhcpc -i eth0 -s /usr/share/udhcpc/default.script
 > ```
 >
-> Setup eth0 network interface.
+> Setup `eth0` network interface and DHCP with `udhcpc`.
 >
 > ```
 > ttyS0::respawn:/sbin/getty -n -l /bin/sh -L ttyS0 115200 vt100
@@ -700,6 +700,8 @@ sudo qemu-system-x86_64 \
     -enable-kvm \
     -cpu host
 ```
+
+`rdinit` specifies the `init` binary path.
 
 > Why `sudo`? In order to use `KVM` acceleration QEMU needs to access `/dev/kvm`. You either need to be
 > part of the `kvm` user group or run this as `root`.
