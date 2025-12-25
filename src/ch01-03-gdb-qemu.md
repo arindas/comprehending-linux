@@ -5,7 +5,7 @@
 To enable debugging our kernel with GDB we need to build our kernel with [DWARF](https://dwarfstd.org/) debug information.
 
 ```bash
-pushd linux-6.17.8
+pushd linux-${VERSION}
 
 make menuconfig
 ```
@@ -112,7 +112,7 @@ Now boot the kernel with the CPU waiting for GDB and allow remote GDB debugging:
 
 ```bash
 qemu-system-x86_64 \
-    -kernel linux-6.17.8/arch/x86/boot/bzImage \
+    -kernel linux-${VERSION}/arch/x86/boot/bzImage \
     -initrd initramfs.cpio.gz \
     -append "console=ttyS0 rdinit=/sbin/init nokaslr" \
     -device virtio-net,netdev=n0 \
@@ -133,9 +133,9 @@ so that our debug information can line up with the loaded kernel.
 
 Now start gdb. In a separate terminal:
 
-```
-cd kernel-workspace/linux-6.17.8
-
+```bash
+VERSION="6.18.2"
+cd kernel-workspace/linux-${VERSION}
 gdb vmlinux
 ```
 

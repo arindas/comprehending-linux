@@ -13,11 +13,11 @@ Goals:
 
 Here are the topics we are going to cover:
 
-- booting
+- Booting
   - bios
   - bootloader
   - protected mode, real mode
-- process management
+- Process management
   - process repr
   - init process
   - syscalls
@@ -27,13 +27,13 @@ Here are the topics we are going to cover:
     - eevdf
     - cfs
     - preempt_rt
-- memory management
-- debugging
+- Memory management
+- Debugging
   - perf
   - ptrace
   - ftrace
   - kprobe
-- file systems
+- File systems
   - vfs
   - ext4
 - I/O
@@ -45,6 +45,7 @@ Here are the topics we are going to cover:
   - xdp, tc, kprobe, uprobe, tracepoint
   - AF_XDP
   - sched_ext
+- Linux kernel module development
 - device drivers
   - character block devices
   - graphics drivers

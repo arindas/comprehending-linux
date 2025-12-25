@@ -80,7 +80,7 @@ sudo pacman -Sy gcc gdb make flex bison \
 ## Grabbing our kernel sources
 
 Next, let's grab our linux kernel. Goto <https://www.kernel.org> and right click and copy the link from the
-**big yellow button**. That's the stable release. At the time of writing (2025-11-21) it's `6.17.8`
+**big yellow button**. That's the stable release. At the time of writing (2025-12-25) it's `6.18.2`
 
 <p align="center">
 <img src="./img/kernel-org.png" alt="kernel-org" width="800"/>
@@ -91,7 +91,7 @@ Download it to your workspace with `wget`. Then extract with `tar`
 ```bash
 #/bin/bash
 
-VERSION="6.17.8"
+VERSION="6.18.2"
 mkdir kernel-workspace
 pushd kernel-workspace
 
