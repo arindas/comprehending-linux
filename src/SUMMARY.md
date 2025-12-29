@@ -14,6 +14,8 @@
 
 - [Kernel interfaces](ch02-00-kernel-interfaces.md)
 
+  - [A Brief description of CPU Architecture](./ch02-01-cpu-architecture.md)
+
 - [Kernel organization](./ch03-00-kernel-organization.md)
 
 - [Booting up](./ch04-00-booting-up.md)
