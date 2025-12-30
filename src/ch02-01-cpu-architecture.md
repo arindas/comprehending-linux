@@ -1,7 +1,7 @@
 # A Brief description of CPU architecture
 
 <p align="center">
-<img width=512 style="background-color: white; padding: 30px;" src="https://encrypted-tbn2.gstatic.com/licensed-image?q=tbn:ANd9GcSdeZd0Dh959E93MLzo7r0pmyVKkDA7h5L2_Dl56Jvv3e1nH0rwxNeMwVq-3ghKREwFRdx5Xz-ZlEO9xYkPhv_WazPBTFr9laE74agVsmWur57UOi4">
+<img width=512 style="background-color: white; padding: 30px;" src="./img/von-neumann.jpg" alt="von-neumann">
 <p align="center">Fig: High Level Von Neumann architecture diagram</p>
 </p>
 
@@ -31,7 +31,7 @@ the side effects.
 
 <p align="center">
 <a title="Processor Architecture (cs.stanford.edu)" href="https://cs.stanford.edu/people/eroberts/courses/soco/projects/2005-06/64-bit-processors/whatis2.html">
-<img style="background-color: white; padding: 30px;" width="512" alt="processor-architecture" src="https://cs.stanford.edu/people/eroberts/courses/soco/projects/2005-06/64-bit-processors/microprocessor.gif">
+<img style="background-color: white; padding: 30px;" alt="processor-architecture" src="./img/microprocessor.gif">
 </a>
 
 <p align="center">Fig: High Level CPU architecture diagram</p>
@@ -91,7 +91,7 @@ Program Counter (PC) (click to expand)
 
 <details>
 <summary>
-Address Latch
+Address Latch (click to expand)
 </summary>
 
 > **Address Latch**
@@ -284,19 +284,21 @@ Finite State Machine to go through the following stages:
 
 Let's understand this with a few example instructions:
 
-```asm
-;; Intel syntax:
+```x86asm
+;; Intel ASM syntax:
 ;; <opcode> <dst> <src>
 ;; <opcode> <label>
 
 mov eax, ebx  ; Move from ebx to eax
-              ; Fetch, Decode, Execute. No Memory access. Register Write Back. ALU skipped
+              ; Fetch, Decode, Execute. No Memory access. Register Write Back.
+              ; ALU skipped
 
 cmp eax, ebx  ; Compare values in eax and ebx registers.
-              ; Fetch, Decode, Execute. Uses ALU which Sets Zero Flag (Z) = 1 if eax == ebx
+              ; Fetch, Decode, Execute. Uses ALU which
+              ; Sets Zero Flag (Z) = 1 if eax == ebx.
               ; No Memory access and No Register Write back.
 
-jne loop      ; Branch instruction. Check Zero Flag.
+jne copy_10B  ; Branch instruction. Check Zero Flag.
               ; If Zero Flag (Z) = 0, i.e. eax != ebx then: jump to label "loop"
               ; - Decode phase reads Zero Flag.
               ; - Execute phase updates instruction pointer RIP to point to address
@@ -304,22 +306,28 @@ jne loop      ; Branch instruction. Check Zero Flag.
               ; If Zero Flag (Z) = 1, i.e. eax == ebx then: No operation (NOP)
               ; - RIP is left untouched and it increments as usual.
 
-mov eax, dword ptr [ebx]    ; Copy 4 bytes from memory pointed to by the address stored in register ebx.
-                            ; Fetch, Decode, Execute, Memory access to read value from memory,
+mov eax, dword ptr [ebx]    ; Copy 4 bytes from memory pointed to by the address
+                            ; stored in register ebx.
+                            ; Fetch, Decode, Execute, Memory access to read
+                            ; value from memory.
                             ; Register Write back. ALU skipped.
 
-mov eax, dword ptr [ebx+4]  ; Copy 4 bytes from memory pointed to by the address stored in register ebx,
-                            ; offset positively by 4 bytes
-                            ; Fetch, Decode, Execute. Address calculation done on ALU. Memory Access
-                            ; to read value from calculated address to register. Register write back.
+mov eax, dword ptr [ebx+4]  ; Copy 4 bytes from memory pointed to by the address
+                            ; stored in register ebx, offset positively by 4 bytes
+                            ; Fetch, Decode, Execute. Address calculation done on ALU.
+                            ; Memory Access to read value from calculated address to
+                            ; register.
+                            ; Register write back.
 
-mov dword ptr [ebx-4], eax  ; Copy 4 bytes from register eax to memory address stored in the register ebx
-                            ; offset negatively by 4 bytes.
+mov dword ptr [ebx-4], eax  ; Copy 4 bytes from register eax to memory address
+                            ; stored in the register ebx offset negatively by 4 bytes.
                             ; Fetch, Decode, Execute. Address calculation done on ALU.
                             ; Memory access to write value from register to memory.
                             ; No Register Write back as no registers are written to.
 
-;; Example to copy 10 bytes from 0x1000 (source address) to 0x2000 (destination address)
+;; Example to copy 10 bytes from 0x1000 (source address) to
+;; 0x2000 (destination address)
+copy_10B:
 mov esi, 0x1000 ; Set source address
 mov edi, 0x2000 ; Set destination address
 mov ecx, 10     ; Set count to 10 bytes
@@ -410,7 +418,7 @@ different stages in this 5th clock cycle.
 <p style="margin-bottom:30px;"></p>
 
 <p align="center">
-<a title="I, Appaloosa, CC BY-SA 3.0 &lt;http://creativecommons.org/licenses/by-sa/3.0/&gt;, via Wikimedia Commons" href="https://commons.wikimedia.org/wiki/File:Intel_Core2_arch.svg"><img style="background-color: white; padding: 30px;" width="512" alt="Intel Core2 arch" src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Intel_Core2_arch.svg/512px-Intel_Core2_arch.svg.png?20070809214908"></a>
+<a title="I, Appaloosa, CC BY-SA 3.0 &lt;http://creativecommons.org/licenses/by-sa/3.0/&gt;, via Wikimedia Commons" href="https://commons.wikimedia.org/wiki/File:Intel_Core2_arch.svg"><img style="background-color: white; padding: 30px;" width="512" alt="Intel Core2 arch" src="./img/512px-Intel_Core2_arch.svg.png"></a>
 <p align="center">Fig: Intel Core Microarchitecture</p>
 </p>
 
@@ -437,7 +445,7 @@ These processors are also Superscalar:
 
 <p align="center">
 <a title="AMD Zen 4 architecture (courtesy Chips and Cheese on Substack)"
-href="https://chipsandcheese.com/p/why-x86-doesnt-need-to-die"><img style="background-color: white; padding: 10px;" src="https://substackcdn.com/image/fetch/$s_!_Vqh!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Ff2927adf-122b-43ca-b6a3-c92a8f2f4435_1631x1082.png" alt="AMD Zen-4 Architecture (courtesy Chips and Cheese)">
+href="https://chipsandcheese.com/p/why-x86-doesnt-need-to-die"><img style="background-color: white; padding: 10px;" src="./img/amd-zen4.png" alt="AMD Zen-4 Architecture (courtesy Chips and Cheese)">
 </a>
 <p align="center">Fig: AMD Zen 4 architecture (courtesy Chips and Cheese on Substack)</p>
 </p>
