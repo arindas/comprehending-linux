@@ -242,7 +242,7 @@ Finite State Machine to go through the following stages:
     - If false, it ignores the jump and allows the Instruction Pointer to
       increment to the next sequential instruction
   - If the instruction involves arithmetic it dispatches it to the ALU.
-    - If it only involves registers, we send it to ALU and wait for results on destinaton register.
+    - If it only involves registers, we send it to ALU and wait for results on destination register.
     - If it involves memory access, e.g. offsetting from a base memory address i.e adding
       some offset to a base memory address, this address addition is done on the ALU and
       the result address is stored on the register. The actual memory read or write back
