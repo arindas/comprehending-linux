@@ -7,19 +7,23 @@
 
 > In the traditional Von Neumann architecture, the Control Unit drives the
 > execution. It fetches instructions and operands from memory, dispatches
-> instructions to the ALU for execution and writes back the result to memory.
+> arithmetic instructions to the ALU for execution and writes back the
+> result to memory.
+>
 > CPUs are a physical implementation of this abstract architecture.
 
 At its heart, every CPU is a digital circuit. It relies on binary inputs and
 binary outputs. To move these binary signals, the CPU interfaces with the System
 Bus which contains the Address, Control and Data bus. The Control Unit places
 the target address on the Address Bus, issues commands on the Control Bus,
-and receives the binary code via the Data Bus.
+and receives the binary code via the Data Bus. The CPU uses registers to store
+operands and results from instructions which are in turn sequential digital
+circuits capable of storing data.
 
 So whenever we need the CPU to:
 
-- Perform some arithmetic operation with its Arithmetic Logical Unit or,
-- Perform Memory Read Write or move data between registers,
+- Perform some arithmetic operation with its Arithmetic Logical Unit
+- Perform Memory Read/Write or move data between registers
 
 We need to pass in a specific binary coded instruction that the digital circuit
 uses as the input to activate the relevant digital circuit components to perform
@@ -109,7 +113,16 @@ Address Latch
 </details>
 
 A CPU is a synchronous sequential digital circuit with combinatorial components
-constructed from these core pillars:
+constructed from these four core components:
+
+- The clock
+- Registers
+- The Arithmetic Logic Unit (ALU)
+- The Control Unit
+
+> The CPU also interfaces with memory and storage through the system bus.
+
+The following sections cover these components in detail.
 
 ## The Clock
 
@@ -147,12 +160,13 @@ determined solely by its current inputs.
 - Logic: Performs bitwise operations like AND, OR, XOR, and NOT.
 - Interaction: When the ALU computes a result (e.g., subtracting two numbers),
   it simultaneously updates the Status Register (RFLAGS) to reflect the outcome
-  (e.g., setting the Zero Flag if the result was 0).
+  (e.g., setting the Zero Flag if the result was 0) and places the result on
+  the destination register.
 
 ## The Control Unit
 
 The control unit is a sequential circuit which relies on the Clock to act as a
-Finite State Machine to go through the Fetch → Decode → Execute cycle:
+Finite State Machine to go through the following stages:
 
 - Fetch: Fetch the next instruction binary code. The CPU's **Bus Interface Unit**
   (BIU) orchestrates this process. It first checks the high-speed L1 Instruction
@@ -220,12 +234,108 @@ Finite State Machine to go through the Fetch → Decode → Execute cycle:
   - Interrupt Flag which controls response to external hardware signals.
 
 - Execute: Activate the specific circuits to perform the operation.
+
   - If the instruction is a conditional branch,
     - the control unit uses these flag values to determine if the condition is
       met.
     - If true, it updates the Instruction Pointer to the new target address.
     - If false, it ignores the jump and allows the Instruction Pointer to
       increment to the next sequential instruction
+  - If the instruction involves arithmetic it dispatches it to the ALU.
+    - If it only involves registers, we send it to ALU and wait for results on destinaton register.
+    - If it involves memory access, e.g. offsetting from a base memory address i.e adding
+      some offset to a base memory address, this address addition is done on the ALU and
+      the result address is stored on the register. The actual memory read or write back
+      happens after that.
+  - If the instructions doesn't involve arithmetic, the ALU is skipped.
+
+- Memory Access: Read from or Write to memory.
+
+  - Reading (Load):
+
+    - The CPU first checks the L1 Data Cache. If the data is present (Cache Hit), it is read immediately.
+    - If not found (Cache Miss), the request cascades to L2, L3, and finally Main Memory.
+    - Data is retrieved from memory in chunks called Cache Lines (typically 64 bytes). This utilizes
+      spatial locality, loading not just the requested byte but also adjacent data,
+      anticipating it will be needed soon.
+
+  - Writing (Store):
+
+    - Write-Back Cache Policy (Modern Standard): To maintain performance, modern CPUs do not usually
+      write data directly to the slow Main Memory. Instead, they write to the cache and set a
+      "Dirty Bit" for that specific cache line. This bit indicates that the data in the cache
+      is newer than the data in RAM. The actual write to Main Memory is deferred until that
+      cache line is "evicted" (removed to make room for new data).
+
+    - Write-Through Cache Policy (Alternative/Legacy): In this simpler but slower approach,
+      every write to the cache is simultaneously written to Main Memory. This ensures
+      RAM is always up to date but generates significant traffic on the system bus.
+
+  - Cache Coherence:
+    - Since multiple cores may cache the same memory address, the CPU uses a coherence
+      protocol (like MESI). If one core modifies a value (sets the Dirty Bit), it must signal
+      all other cores to mark their copies of that address as "Invalid" to prevent
+      them from using stale data.
+
+- Register Write Back: Write back the result from this instruction to registers.
+
+> Note: Memory access does both Read/Write with memory. Register Write Back only writes back
+> to internal registers.
+
+Let's understand this with a few example instructions:
+
+```asm
+;; Intel syntax:
+;; <opcode> <dst> <src>
+;; <opcode> <label>
+
+mov eax, ebx  ; Move from ebx to eax
+              ; Fetch, Decode, Execute. No Memory access. Register Write Back. ALU skipped
+
+cmp eax, ebx  ; Compare values in eax and ebx registers.
+              ; Fetch, Decode, Execute. Uses ALU which Sets Zero Flag (Z) = 1 if eax == ebx
+              ; No Memory access and No Register Write back.
+
+jne loop      ; Branch instruction. Check Zero Flag.
+              ; If Zero Flag (Z) = 0, i.e. eax != ebx then: jump to label "loop"
+              ; - Decode phase reads Zero Flag.
+              ; - Execute phase updates instruction pointer RIP to point to address
+              ;   of instruction with label "loop"
+              ; If Zero Flag (Z) = 1, i.e. eax == ebx then: No operation (NOP)
+              ; - RIP is left untouched and it increments as usual.
+
+mov eax, dword ptr [ebx]    ; Copy 4 bytes from memory pointed to by the address stored in register ebx.
+                            ; Fetch, Decode, Execute, Memory access to read value from memory,
+                            ; Register Write back. ALU skipped.
+
+mov eax, dword ptr [ebx+4]  ; Copy 4 bytes from memory pointed to by the address stored in register ebx,
+                            ; offset positively by 4 bytes
+                            ; Fetch, Decode, Execute. Address calculation done on ALU. Memory Access
+                            ; to read value from calculated address to register. Register write back.
+
+mov dword ptr [ebx-4], eax  ; Copy 4 bytes from register eax to memory address stored in the register ebx
+                            ; offset negatively by 4 bytes.
+                            ; Fetch, Decode, Execute. Address calculation done on ALU.
+                            ; Memory access to write value from register to memory.
+                            ; No Register Write back as no registers are written to.
+
+;; Example to copy 10 bytes from 0x1000 (source address) to 0x2000 (destination address)
+mov esi, 0x1000 ; Set source address
+mov edi, 0x2000 ; Set destination address
+mov ecx, 10     ; Set count to 10 bytes
+rep movsb       ; Repeat the MOVSB instruction 10 times
+
+                ; MOVSB copies from memory to memory
+                ; REP checks if ECX == 0
+                ; Each iteration:
+                ; 1. Checks ECX. If 0, exit.
+                ; 2. Executes MOVSB (Read Mem[ESI], Write Mem[EDI]).
+                ; 3. Increments ESI/EDI, Decrements ECX.
+                ; 4. Updates RIP to point back to itself (until ECX=0).
+```
+
+> Note: This doesn't cover Data hazards like Read After Write (RAW) or Structural Hazards.
+> Refer to the recommended books for more info.
 
 ## Modern x86_64 Optimizations
 
@@ -332,26 +442,26 @@ href="https://chipsandcheese.com/p/why-x86-doesnt-need-to-die"><img style="backg
 <p align="center">Fig: AMD Zen 4 architecture (courtesy Chips and Cheese on Substack)</p>
 </p>
 
-> I recommend the following books for a deeper understanding (bottom-up sequence):
+> I recommend the following books for a deeper understanding:
 >
-> - Digital Design and Computer Architecture (David Money Harris and Sarah L. Harris)
->   - Goes into detail about the CPU is implemented at the digital circuit
->     level, down to the logic gates and transistors.
-> - Computer Architecture: A Quantitative Approach (Hennessy, Patterson)
->   - Goes into detail about pipelining, data dependencies and hazards,
->     dynamic scheduling, branch prediction, Tomasulo's algorithm
-> - Computer Organization and Design: The Hardware Software Interface (Hennessy, Patterson)
->   - Provides an overview of the Pipelining process
 > - Computer Systems a Programmer's Perspective (Randal E. Bryant, David R. O’Hallaron)
 >   - Compares high level
 >     C and assembly side by side and describes the execution process in detail
+> - Computer Organization and Design: The Hardware Software Interface (Hennessy, Patterson)
+>   - Provides an overview of the Pipelining process
+> - Computer Architecture: A Quantitative Approach (Hennessy, Patterson)
+>   - Goes into detail about pipelining, data dependencies, data hazards, structural hazards,
+>     dynamic scheduling, branch prediction, Tomasulo's algorithm
+> - Digital Design and Computer Architecture (David Money Harris and Sarah L. Harris)
+>   - Goes into detail about the CPU is implemented at the digital circuit
+>     level, down to the logic gates and transistors.
 >
 > I would also recommend this blog post:
 >
 > - [Why x86 Doesn’t Need to Die ~ Chester Lam on Chips and Cheese](https://chipsandcheese.com/p/why-x86-doesnt-need-to-die)
 >   - The AMD Zen-4 architecture diagram is taken from this blog post
 >   - Covers Out of order execution, CISC vs RISC tradeoffs, instruction
->     fetching and decoding perforamance analysis
+>     fetching and decoding performance analysis.
 
 From this we can conclude that the following is unique for every architecture:
 
@@ -361,8 +471,8 @@ From this we can conclude that the following is unique for every architecture:
 - Architecture specific digital circuit implementation
 - Architecture specific optimizations
 
-Due to the above reasons, every architecture has it's own set of instructions,
-instruction invocation conventions and thereby it's own ISA.
+Due to the above reasons, every architecture has its own set of instructions,
+instruction invocation conventions and thereby its own ISA.
 
 That said there are modern open standardized ISAs like RISCV which can then have
 different implementations at the digital circuit level.
