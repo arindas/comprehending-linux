@@ -168,7 +168,7 @@ determined solely by its current inputs.
 The control unit is a sequential circuit which relies on the Clock to act as a
 Finite State Machine to go through the following stages:
 
-- Fetch: Fetch the next instruction binary code. The CPU's **Bus Interface Unit**
+- **Fetch**: Fetch the next instruction binary code. The CPU's **Bus Interface Unit**
   (BIU) orchestrates this process. It first checks the high-speed L1 Instruction
   Cache. If the data is not found, it cascades the check to the L2 and L3
   Caches. If a Cache Miss occurs at all levels, the CPU must retrieve the data
@@ -221,7 +221,7 @@ Finite State Machine to go through the following stages:
   > Extension](https://en.wikipedia.org/wiki/Physical_Address_Extension)
   > alleviated this to a certain extent.
 
-- Decode: Decode the instruction and examine the Status Register. This register,
+- **Decode**: Decode the instruction and examine the Status Register. This register,
   known as RFLAGS on x86_64, holds the current state of the processor. Key flags
   include:
 
@@ -233,7 +233,7 @@ Finite State Machine to go through the following stages:
   - Direction Flag for string processing order
   - Interrupt Flag which controls response to external hardware signals.
 
-- Execute: Activate the specific circuits to perform the operation.
+- **Execute**: Activate the specific circuits to perform the operation.
 
   - If the instruction is a conditional branch,
     - the control unit uses these flag values to determine if the condition is
@@ -249,7 +249,7 @@ Finite State Machine to go through the following stages:
       happens after that.
   - If the instructions doesn't involve arithmetic, the ALU is skipped.
 
-- Memory Access: Read from or Write to memory.
+- **Memory Access**: Read from or Write to memory.
 
   - Reading (Load):
 
@@ -277,7 +277,7 @@ Finite State Machine to go through the following stages:
       all other cores to mark their copies of that address as "Invalid" to prevent
       them from using stale data.
 
-- Register Write Back: Write back the result from this instruction to registers.
+- **Register Write Back**: Write back the result from this instruction to registers.
 
 > Note: Memory access does both Read/Write with memory. Register Write Back only writes back
 > to internal registers.
@@ -299,7 +299,7 @@ cmp eax, ebx  ; Compare values in eax and ebx registers.
               ; No Memory access and No Register Write back.
 
 jne copy_10B  ; Branch instruction. Check Zero Flag.
-              ; If Zero Flag (Z) = 0, i.e. eax != ebx then: jump to label "loop"
+              ; If Zero Flag (Z) = 0, i.e. eax != ebx then: jump to label "copy_10B"
               ; - Decode phase reads Zero Flag.
               ; - Execute phase updates instruction pointer RIP to point to address
               ;   of instruction with label "loop"
@@ -328,18 +328,18 @@ mov dword ptr [ebx-4], eax  ; Copy 4 bytes from register eax to memory address
 ;; Example to copy 10 bytes from 0x1000 (source address) to
 ;; 0x2000 (destination address)
 copy_10B:
-mov esi, 0x1000 ; Set source address
-mov edi, 0x2000 ; Set destination address
-mov ecx, 10     ; Set count to 10 bytes
-rep movsb       ; Repeat the MOVSB instruction 10 times
+  mov esi, 0x1000 ; Set source address
+  mov edi, 0x2000 ; Set destination address
+  mov ecx, 10     ; Set count to 10 bytes
+  rep movsb       ; Repeat the MOVSB instruction 10 times
 
-                ; MOVSB copies from memory to memory
-                ; REP checks if ECX == 0
-                ; Each iteration:
-                ; 1. Checks ECX. If 0, exit.
-                ; 2. Executes MOVSB (Read Mem[ESI], Write Mem[EDI]).
-                ; 3. Increments ESI/EDI, Decrements ECX.
-                ; 4. Updates RIP to point back to itself (until ECX=0).
+                  ; MOVSB copies from memory to memory
+                  ; REP checks if ECX == 0
+                  ; Each iteration:
+                  ; 1. Checks ECX. If 0, exit.
+                  ; 2. Executes MOVSB (Read Mem[ESI], Write Mem[EDI]).
+                  ; 3. Increments ESI/EDI, Decrements ECX.
+                  ; 4. Updates RIP to point back to itself (until ECX=0).
 ```
 
 > Note: This doesn't cover Data hazards like Read After Write (RAW) or Structural Hazards.
@@ -373,17 +373,24 @@ CPU, a new instruction enters the "assembly line" every clock cycle. The
 important thing to note is, every pipeline stage can function independently
 as long it has the necessary data to operate on.
 
-**Pipeline Execution Table**
+**(Ideal) Pipeline Execution Table**
 
-| Instruction | Cycle 1 | Cycle 2 | Cycle 3 | Cycle 4 | Cycle 5 | Cycle 6 | Cycle 7 | Cycle 8 | Cycle 9 |
-| :---------- | :-----: | :-----: | :-----: | :-----: | :-----: | :-----: | :-----: | :-----: | :-----: |
-| **Instr 1** | **IF**  |   ID    |   EX    |   MEM   |   WB    |         |         |         |         |
-| **Instr 2** |         | **IF**  |   ID    |   EX    |   MEM   |   WB    |         |         |         |
-| **Instr 3** |         |         | **IF**  |   ID    |   EX    |   MEM   |   WB    |         |         |
-| **Instr 4** |         |         |         | **IF**  |   ID    |   EX    |   MEM   |   WB    |         |
-| **Instr 5** |         |         |         |         | **IF**  |   ID    |   EX    |   MEM   |   WB    |
+| #I    |  CC 1  |  CC 2  |  CC 3  |  CC 4  |  CC 5  | CC 6 | CC 7 | CC 8 | CC 9 |
+| :---- | :----: | :----: | :----: | :----: | :----: | :--: | :--: | :--: | :--: |
+| **1** | **IF** |   ID   |   EX   |  MEM   |   WB   |      |      |      |      |
+| **2** |        | **IF** |   ID   |   EX   |  MEM   |  WB  |      |      |      |
+| **3** |        |        | **IF** |   ID   |   EX   | MEM  |  WB  |      |      |
+| **4** |        |        |        | **IF** |   ID   |  EX  | MEM  |  WB  |      |
+| **5** |        |        |        |        | **IF** |  ID  |  EX  | MEM  |  WB  |
 
-In the table above, notice how at **Clock Cycle 5**, the hardware is fully
+> Rows represent consecutive instructions. #I is the instruction number.
+>
+> Columns represent the clock cycle (CC).
+>
+> Every cell value represents the **Control Unit Pipeline Stage** _for_:
+> a particular **Instruction**, _at_ a particular **Clock Cycle**.
+
+In the table above, notice how at **CC 5**, the hardware is fully
 saturated. Five different instructions are being processed simultaneously in
 different stages in this 5th clock cycle.
 
@@ -414,6 +421,10 @@ different stages in this 5th clock cycle.
    The final result of the operation (from the ALU) or the data retrieved from
    memory is written back into the destination register in the Register File,
    making it available for future instructions.
+
+> This is the ideal pipeline execution. In reality the control unit may choose
+> to insert stalls or bypass register file to avoid data hazards. Refer to
+> recommeneded books for more info.
 
 <p style="margin-bottom:30px;"></p>
 
@@ -490,5 +501,5 @@ exposes for being programmed with.
 
 In the next chapter, we will refer to the ["Intel® 64 and IA-32 Architectures
 Software Developer’s Manual"](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html)
-to know more about the available opcodes, registers and instruction format to
+to know more about the available registers, instruction format and opcodes to
 see how to write programs in assembly or machine code.

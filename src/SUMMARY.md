@@ -15,6 +15,7 @@
 - [Kernel interfaces](ch02-00-kernel-interfaces.md)
 
   - [A Brief description of CPU Architecture](./ch02-01-cpu-architecture.md)
+  - [Assembly and machine code](./ch02-02-asm-and-machine-code.md)
 
 - [Kernel organization](./ch03-00-kernel-organization.md)
 

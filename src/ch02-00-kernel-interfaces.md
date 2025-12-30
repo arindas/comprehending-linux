@@ -16,3 +16,29 @@ invocation conventions that the architecture supports. Now why is it necessary
 for the ISA to be _unique_?
 
 In order to understand this, we need a brief description of CPU architecture.
+
+<!--
+
+# Narrative script
+
+- Pose the question whether it's possible to write programs without using
+  OS features directly in assembly or machine code
+- Specify that we will we working x86_64 ISA
+- Pose the question why it's necessary to specify this?
+- Describe CPU architecture, clearly explain how every CPU architecture has it's own ISA
+- Go back to x86_64 ISA, refer to IA64 specification to know about:
+    - Basic execution environment
+    - Register
+    - Instruction format
+    - Available opcodes
+
+- Introduce witing code in machine code first. Use the hex tables in the manaal to know how to encode registers and opcodes
+- This first program simply MOVs a value into a register, show how to link it and run it on a bare metal target
+- Next do the same in assembly. Explain how the assembler translates the assembly into machine code for us
+- Bring up the lack of any visible side effects. Suggest introducing basic I/O by printing "Gello world"
+-
+
+
+
+
+-->
