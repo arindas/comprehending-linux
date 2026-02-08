@@ -12,13 +12,4 @@
   - [Debug kernel: GDB + QEMU monitor](./ch01-03-gdb-qemu.md)
   - [Wrapping Up](./ch01-04-wrapping-up.md)
 
-- [Kernel interfaces](ch02-00-kernel-interfaces.md)
 
-  - [A Brief description of CPU Architecture](./ch02-01-cpu-architecture.md)
-  - [Assembly and machine code](./ch02-02-asm-and-machine-code.md)
-
-- [Kernel organization](./ch03-00-kernel-organization.md)
-
-- [Booting up](./ch04-00-booting-up.md)
-
-- [Process Management](./ch05-00-process-management.md)
